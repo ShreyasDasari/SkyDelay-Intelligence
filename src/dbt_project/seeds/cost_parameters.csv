@@ -1,0 +1,5 @@
+parameter_name,value,unit,source
+passenger_delay_cost_per_minute,0.74,USD,FAA/NEXTOR II (2025-adjusted)
+airline_ops_cost_per_minute,68.48,USD,FAA/NEXTOR II (2025-adjusted)
+avg_load_factor,0.87,ratio,US domestic average 2025
+avg_seats_domestic,160,count,US domestic average 2025

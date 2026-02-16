@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: skydelay
+    schema: main
+    tables:
+      - name: raw_bts_flights
+        description: "BTS On-Time Performance data — 1.7M US domestic flights"
+      - name: raw_opensky_positions
+        description: "Live aircraft ADS-B positions from OpenSky Network"
+      - name: raw_weather_observations
+        description: "NOAA METAR weather observations at US airports"
+      - name: raw_faa_airport_status
+        description: "FAA NAS ground delay programs and ground stops"

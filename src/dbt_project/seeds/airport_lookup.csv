@@ -1,0 +1,27 @@
+iata_code,icao_code,airport_name,city,state,latitude,longitude,is_major_hub
+ORD,KORD,Chicago O'Hare International,Chicago,IL,41.98,-87.90,true
+ATL,KATL,Hartsfield-Jackson Atlanta International,Atlanta,GA,33.64,-84.43,true
+DFW,KDFW,Dallas/Fort Worth International,Dallas,TX,32.90,-97.04,true
+DEN,KDEN,Denver International,Denver,CO,39.86,-104.67,true
+LAX,KLAX,Los Angeles International,Los Angeles,CA,33.94,-118.41,true
+JFK,KJFK,John F Kennedy International,New York,NY,40.64,-73.78,true
+SFO,KSFO,San Francisco International,San Francisco,CA,37.62,-122.38,true
+SEA,KSEA,Seattle-Tacoma International,Seattle,WA,47.45,-122.31,true
+MIA,KMIA,Miami International,Miami,FL,25.79,-80.29,true
+BOS,KBOS,Boston Logan International,Boston,MA,42.36,-71.01,true
+EWR,KEWR,Newark Liberty International,Newark,NJ,40.69,-74.17,true
+CLT,KCLT,Charlotte Douglas International,Charlotte,NC,35.21,-80.94,true
+PHX,KPHX,Phoenix Sky Harbor International,Phoenix,AZ,33.44,-112.01,true
+IAH,KIAH,George Bush Intercontinental,Houston,TX,29.98,-95.34,true
+MSP,KMSP,Minneapolis-Saint Paul International,Minneapolis,MN,44.88,-93.22,true
+DTW,KDTW,Detroit Metropolitan Wayne County,Detroit,MI,42.21,-83.35,true
+LGA,KLGA,LaGuardia,New York,NY,40.77,-73.87,true
+PHL,KPHL,Philadelphia International,Philadelphia,PA,39.87,-75.24,true
+DCA,KDCA,Ronald Reagan Washington National,Washington,DC,38.85,-77.04,true
+SLC,KSLC,Salt Lake City International,Salt Lake City,UT,40.79,-111.98,true
+LAS,KLAS,Harry Reid International,Las Vegas,NV,36.08,-115.15,true
+MCO,KMCO,Orlando International,Orlando,FL,28.43,-81.31,true
+BNA,KBNA,Nashville International,Nashville,TN,36.12,-86.68,true
+SAN,KSAN,San Diego International,San Diego,CA,32.73,-117.19,false
+TPA,KTPA,Tampa International,Tampa,FL,27.98,-82.53,false
+PDX,KPDX,Portland International,Portland,OR,45.59,-122.60,false

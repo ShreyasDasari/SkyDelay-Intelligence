@@ -1,0 +1,7 @@
+skydelay:
+  outputs:
+    dev:
+      type: duckdb
+      path: "../../data/skydelay.duckdb"
+      schema: main
+  target: dev

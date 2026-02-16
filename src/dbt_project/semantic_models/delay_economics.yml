@@ -1,0 +1,28 @@
+semantic_model:
+  name: delay_economics
+  description: "Airport-level daily economic impact of flight delays"
+  model: ref('mart_delay_economics')
+  entities:
+    - name: airport
+      type: primary
+      expr: airport
+  measures:
+    - name: total_economic_impact
+      agg: sum
+      expr: est_total_economic_impact
+    - name: avg_delay
+      agg: avg
+      expr: avg_dep_delay_min
+    - name: total_departures
+      agg: sum
+      expr: total_departures
+  dimensions:
+    - name: flight_date
+      type: time
+      expr: flight_date
+    - name: airport
+      type: categorical
+      expr: airport
+    - name: day_name
+      type: categorical
+      expr: day_name
