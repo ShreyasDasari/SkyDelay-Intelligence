@@ -1,0 +1,45 @@
+version: "1.0"
+name: skydelay_intelligence
+description: "Aviation delay economics and cascade impact analysis"
+
+data_sources:
+  - name: bts_flights
+    description: "1.7M US domestic flights with delay metrics and causes"
+    freshness: batch (monthly from BTS TranStats)
+    key_fields: [flight_date, origin_airport, dest_airport, airline_iata]
+
+  - name: opensky_positions
+    description: "Live aircraft ADS-B positions over Continental US"
+    freshness: real-time (polled every 5 minutes)
+    key_fields: [icao24, callsign, latitude, longitude]
+
+  - name: weather_observations
+    description: "METAR airport weather conditions"
+    freshness: real-time (polled every 10 minutes)
+    key_fields: [station_id, airport_code, flight_category]
+
+  - name: faa_airport_status
+    description: "FAA ground delay programs and ground stops"
+    freshness: real-time (polled every 2 minutes)
+    key_fields: [airport_code, delay_type, has_delay]
+
+tools:
+  - name: get_airport_delay_summary
+    description: "Delay metrics, cause breakdown, and cost for any airport"
+  - name: simulate_cascade_impact
+    description: "Model cascading delay effects at a hub airport"
+  - name: get_hub_vulnerability_ranking
+    description: "Airports ranked by cascade vulnerability"
+  - name: get_costliest_routes
+    description: "Routes with highest delay-driven losses"
+  - name: get_airport_weather
+    description: "Current METAR conditions at an airport"
+  - name: get_pipeline_health
+    description: "Health status of all data sources"
+
+cost_methodology:
+  source: "FAA/NEXTOR II Total Delay Impact Study (inflation-adjusted 2025)"
+  passenger_cost_per_minute: 0.74
+  airline_ops_cost_per_minute: 68.48
+  avg_load_factor: 0.87
+  avg_seats_domestic: 160
