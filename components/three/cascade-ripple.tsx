@@ -1,190 +1,12 @@
 "use client";
 
-import { useRef, useMemo, useState, useEffect } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
-import * as THREE from "three";
+import { useMemo } from "react";
 import { AIRPORT_COORDS } from "@/lib/constants";
 
-// Normalize lat/lon to flat 2D plane
-function latLonToFlat(lat: number, lon: number): [number, number] {
-  // Center on US: lat 25-50, lon -65 to -125
-  const x = ((lon + 125) / 60) * 8 - 4;
-  const y = ((lat - 25) / 25) * 5 - 2.5;
+function project(lat: number, lon: number): [number, number] {
+  const x = ((lon + 130) / 70) * 900 + 50;
+  const y = ((50 - lat) / 30) * 500 + 30;
   return [x, y];
-}
-
-function RippleRing({
-  delay,
-  index,
-  active,
-}: {
-  delay: number;
-  index: number;
-  active: boolean;
-}) {
-  const ref = useRef<THREE.Mesh>(null);
-  const [scale, setScale] = useState(0.2);
-  const [opacity, setOpacity] = useState(0.8);
-
-  useFrame((_, delta) => {
-    if (!active) return;
-    setScale((s) => {
-      const newScale = s + delta * (0.6 + index * 0.15);
-      if (newScale > 3) return 0.2;
-      return newScale;
-    });
-    setOpacity((o) => {
-      const newOpacity = 0.8 - (scale / 3) * 0.8;
-      return Math.max(0, newOpacity);
-    });
-  });
-
-  if (!active) return null;
-
-  return (
-    <mesh ref={ref} scale={[scale, scale, 1]} position={[0, 0, 0.01 * index]}>
-      <ringGeometry args={[0.95, 1, 64]} />
-      <meshBasicMaterial
-        color="#4F46E5"
-        transparent
-        opacity={opacity}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  );
-}
-
-function AirportNode({
-  code,
-  position,
-  isSource,
-  isAffected,
-  affectedDelay,
-}: {
-  code: string;
-  position: [number, number];
-  isSource: boolean;
-  isAffected: boolean;
-  affectedDelay: number;
-}) {
-  const ref = useRef<THREE.Mesh>(null);
-  const [glowOpacity, setGlowOpacity] = useState(0);
-
-  useFrame((_, delta) => {
-    if (isSource && ref.current) {
-      ref.current.rotation.z += delta * 0.5;
-    }
-    if (isAffected) {
-      setGlowOpacity((o) => Math.min(o + delta * 2, 0.8));
-    }
-  });
-
-  const color = isSource ? "#DC2626" : isAffected ? "#F59E0B" : "#94A3B8";
-  const size = isSource ? 0.12 : isAffected ? 0.08 : 0.04;
-
-  return (
-    <group position={[position[0], position[1], 0]}>
-      {/* Glow */}
-      {(isSource || isAffected) && (
-        <mesh>
-          <circleGeometry args={[size * 3, 32]} />
-          <meshBasicMaterial
-            color={color}
-            transparent
-            opacity={isSource ? 0.2 : glowOpacity * 0.15}
-          />
-        </mesh>
-      )}
-      <mesh ref={ref}>
-        <circleGeometry args={[size, 32]} />
-        <meshBasicMaterial color={color} />
-      </mesh>
-      {(isSource || isAffected) && (
-        <Text
-          position={[0, size + 0.15, 0.1]}
-          fontSize={0.12}
-          color={isSource ? "#DC2626" : "#D97706"}
-          anchorX="center"
-          anchorY="bottom"
-          font="/fonts/Geist-Bold.ttf"
-        >
-          {code}
-        </Text>
-      )}
-    </group>
-  );
-}
-
-function CascadeScene({
-  sourceAirport,
-  active,
-  affectedAirports,
-}: {
-  sourceAirport: string;
-  active: boolean;
-  affectedAirports: string[];
-}) {
-  const sourceCoord = AIRPORT_COORDS[sourceAirport];
-  const sourcePos = sourceCoord
-    ? latLonToFlat(sourceCoord.lat, sourceCoord.lon)
-    : ([0, 0] as [number, number]);
-
-  const airportNodes = useMemo(() => {
-    return Object.entries(AIRPORT_COORDS).map(([code, coord]) => ({
-      code,
-      position: latLonToFlat(coord.lat, coord.lon) as [number, number],
-    }));
-  }, []);
-
-  return (
-    <>
-      <ambientLight intensity={0.8} />
-
-      {/* US outline (subtle grid) */}
-      <gridHelper
-        args={[10, 20, "#E2E8F0", "#F1F5F9"]}
-        rotation={[Math.PI / 2, 0, 0]}
-        position={[0, 0, -0.1]}
-      />
-
-      {/* Ripple rings from source */}
-      <group position={[sourcePos[0], sourcePos[1], 0]}>
-        {[0, 1, 2, 3].map((i) => (
-          <RippleRing key={i} delay={i * 0.5} index={i} active={active} />
-        ))}
-      </group>
-
-      {/* Connection lines to affected airports */}
-      {active &&
-        affectedAirports.map((code) => {
-          const coord = AIRPORT_COORDS[code];
-          if (!coord) return null;
-          const pos = latLonToFlat(coord.lat, coord.lon);
-          const geom = new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(sourcePos[0], sourcePos[1], 0.02),
-            new THREE.Vector3(pos[0], pos[1], 0.02),
-          ]);
-          return (
-            <line key={code} geometry={geom}>
-              <lineBasicMaterial color="#F59E0B" transparent opacity={0.3} />
-            </line>
-          );
-        })}
-
-      {/* Airport nodes */}
-      {airportNodes.map((node) => (
-        <AirportNode
-          key={node.code}
-          code={node.code}
-          position={node.position}
-          isSource={node.code === sourceAirport}
-          isAffected={active && affectedAirports.includes(node.code)}
-          affectedDelay={0}
-        />
-      ))}
-    </>
-  );
 }
 
 interface CascadeRippleProps {
@@ -198,31 +20,147 @@ export function CascadeRipple({
   active,
   affectedAirports = [],
 }: CascadeRippleProps) {
-  // Generate affected airports from hub connections if not provided
   const affected = useMemo(() => {
     if (affectedAirports.length > 0) return affectedAirports;
-    // Default: show top connected airports
-    const nearby = Object.keys(AIRPORT_COORDS).filter(
-      (c) => c !== sourceAirport
-    );
-    return nearby.slice(0, 10);
+    return Object.keys(AIRPORT_COORDS)
+      .filter((c) => c !== sourceAirport)
+      .slice(0, 10);
   }, [sourceAirport, affectedAirports]);
+
+  const sourceCoord = AIRPORT_COORDS[sourceAirport];
+  const sourcePos = sourceCoord
+    ? project(sourceCoord.lat, sourceCoord.lon)
+    : [500, 280];
+
+  const connections = useMemo(() => {
+    return affected
+      .map((code) => {
+        const coord = AIRPORT_COORDS[code];
+        if (!coord) return null;
+        const [x, y] = project(coord.lat, coord.lon);
+        return { code, x, y };
+      })
+      .filter(Boolean) as { code: string; x: number; y: number }[];
+  }, [affected]);
 
   return (
     <div className="relative h-[300px] w-full overflow-hidden rounded-xl border border-border bg-gradient-to-b from-slate-50 to-white">
-      <Canvas
-        camera={{ position: [0, 0, 7], fov: 45 }}
-        orthographic={false}
-        style={{ background: "transparent" }}
+      <svg
+        viewBox="0 0 1000 560"
+        className="h-full w-full"
+        preserveAspectRatio="xMidYMid meet"
       >
-        <CascadeScene
-          sourceAirport={sourceAirport}
-          active={active}
-          affectedAirports={affected}
-        />
-      </Canvas>
+        <defs>
+          <radialGradient id="ripple-grad">
+            <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#4F46E5" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        {/* Background grid */}
+        <g opacity={0.1}>
+          {Array.from({ length: 20 }).map((_, i) => (
+            <line key={`h${i}`} x1={0} y1={i * 28} x2={1000} y2={i * 28} stroke="#94A3B8" strokeWidth={0.5} />
+          ))}
+          {Array.from({ length: 36 }).map((_, i) => (
+            <line key={`v${i}`} x1={i * 28} y1={0} x2={i * 28} y2={560} stroke="#94A3B8" strokeWidth={0.5} />
+          ))}
+        </g>
+
+        {/* Ripple rings emanating from source */}
+        {active && (
+          <g>
+            {[0, 1, 2, 3].map((i) => (
+              <circle
+                key={i}
+                cx={sourcePos[0]}
+                cy={sourcePos[1]}
+                r={30}
+                fill="none"
+                stroke="#4F46E5"
+                strokeWidth={2 - i * 0.3}
+                className="cascade-ring"
+                style={{ animationDelay: `${i * 0.4}s` }}
+              />
+            ))}
+            <circle
+              cx={sourcePos[0]}
+              cy={sourcePos[1]}
+              r={80}
+              fill="url(#ripple-grad)"
+              className="cascade-glow"
+            />
+          </g>
+        )}
+
+        {/* Connection lines to affected airports */}
+        {active &&
+          connections.map((c, i) => {
+            const mx = (sourcePos[0] + c.x) / 2;
+            const my = (sourcePos[1] + c.y) / 2 - 20;
+            return (
+              <g key={c.code}>
+                <path
+                  d={`M ${sourcePos[0]} ${sourcePos[1]} Q ${mx} ${my} ${c.x} ${c.y}`}
+                  fill="none"
+                  stroke="#F59E0B"
+                  strokeWidth={1}
+                  strokeDasharray="6 4"
+                  opacity={0.5}
+                  className="cascade-line"
+                  style={{ animationDelay: `${0.5 + i * 0.15}s` }}
+                />
+              </g>
+            );
+          })}
+
+        {/* Affected airport nodes */}
+        {active &&
+          connections.map((c, i) => (
+            <g key={c.code} className="cascade-node" style={{ animationDelay: `${0.5 + i * 0.15}s` }}>
+              <circle cx={c.x} cy={c.y} r={12} fill="#F59E0B" opacity={0.1} />
+              <circle cx={c.x} cy={c.y} r={5} fill="#F59E0B" opacity={0.8} />
+              <text
+                x={c.x}
+                y={c.y - 10}
+                textAnchor="middle"
+                className="fill-amber-700 text-[9px] font-bold"
+              >
+                {c.code}
+              </text>
+            </g>
+          ))}
+
+        {/* All airport dots (subtle) */}
+        {Object.entries(AIRPORT_COORDS).map(([code, coord]) => {
+          if (code === sourceAirport || affected.includes(code)) return null;
+          const [x, y] = project(coord.lat, coord.lon);
+          return <circle key={code} cx={x} cy={y} r={2} fill="#94A3B8" opacity={0.25} />;
+        })}
+
+        {/* Source airport */}
+        <g>
+          <circle cx={sourcePos[0]} cy={sourcePos[1]} r={18} fill="#DC2626" opacity={0.12} />
+          <circle
+            cx={sourcePos[0]}
+            cy={sourcePos[1]}
+            r={8}
+            fill="#DC2626"
+            className={active ? "source-pulse" : ""}
+          />
+          <text
+            x={sourcePos[0]}
+            y={sourcePos[1] - 22}
+            textAnchor="middle"
+            className="fill-red-700 text-[11px] font-bold"
+          >
+            {sourceAirport}
+          </text>
+        </g>
+      </svg>
+
       {!active && (
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
           <p className="text-sm text-muted-foreground">
             Run a simulation to see cascade propagation
           </p>

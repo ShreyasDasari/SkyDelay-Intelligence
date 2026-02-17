@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import dynamic from "next/dynamic";
 import {
   PieChart,
   Pie,
@@ -20,11 +19,7 @@ import { KpiCard } from "@/components/dashboard/kpi-card";
 import { COST_PARAMS, CHART_COLORS, AIRPORT_COORDS } from "@/lib/constants";
 import type { CascadeVulnerability, CascadeResult } from "@/lib/types";
 
-const CascadeRipple = dynamic(
-  () =>
-    import("@/components/three/cascade-ripple").then((m) => m.CascadeRipple),
-  { ssr: false }
-);
+import { CascadeRipple } from "@/components/three/cascade-ripple";
 
 interface CascadeSimulatorProps {
   airports: CascadeVulnerability[];
