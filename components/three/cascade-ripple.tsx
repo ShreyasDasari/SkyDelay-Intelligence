@@ -161,25 +161,12 @@ function CascadeScene({
           const coord = AIRPORT_COORDS[code];
           if (!coord) return null;
           const pos = latLonToFlat(coord.lat, coord.lon);
+          const geom = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(sourcePos[0], sourcePos[1], 0.02),
+            new THREE.Vector3(pos[0], pos[1], 0.02),
+          ]);
           return (
-            <line key={code}>
-              <bufferGeometry>
-                <bufferAttribute
-                  attach="attributes-position"
-                  count={2}
-                  array={
-                    new Float32Array([
-                      sourcePos[0],
-                      sourcePos[1],
-                      0.02,
-                      pos[0],
-                      pos[1],
-                      0.02,
-                    ])
-                  }
-                  itemSize={3}
-                />
-              </bufferGeometry>
+            <line key={code} geometry={geom}>
               <lineBasicMaterial color="#F59E0B" transparent opacity={0.3} />
             </line>
           );
