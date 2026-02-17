@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
 import {
   BarChart,
   Bar,
@@ -10,38 +11,22 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { createClient } from "@/lib/supabase/client";
+import { getDailyImpact } from "@/lib/queries";
 import { CHART_COLORS } from "@/lib/constants";
 
 const AIRPORTS = ["ORD", "ATL", "DFW", "JFK", "DEN", "LAX", "EWR", "BOS"];
 
 export function DailyImpactBar() {
   const [airport, setAirport] = useState("ORD");
-  const [data, setData] = useState<
-    { flight_date: string; cost: number }[]
-  >([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      const supabase = createClient();
-      const { data: result } = await supabase
-        .from("mart_delay_economics")
-        .select("flight_date, est_total_economic_impact")
-        .eq("airport", airport)
-        .order("flight_date", { ascending: true });
+  const { data: rawData, isLoading } = useSWR(`daily-impact-${airport}`, () =>
+    getDailyImpact(airport)
+  );
 
-      setData(
-        (result || []).map((r) => ({
-          flight_date: r.flight_date?.slice(5) || "",
-          cost: r.est_total_economic_impact || 0,
-        }))
-      );
-      setLoading(false);
-    }
-    fetchData();
-  }, [airport]);
+  const chartData = (rawData || []).map((r) => ({
+    flight_date: r.flight_date?.slice(5) || "",
+    cost: r.est_total_economic_impact || 0,
+  }));
 
   return (
     <div className="chart-card rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -62,14 +47,14 @@ export function DailyImpactBar() {
         </select>
       </div>
       <div className="mt-4 h-[300px]">
-        {loading ? (
+        {isLoading ? (
           <div className="flex h-full items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={data}
+              data={chartData}
               margin={{ top: 4, right: 8, left: -8, bottom: 0 }}
             >
               <CartesianGrid

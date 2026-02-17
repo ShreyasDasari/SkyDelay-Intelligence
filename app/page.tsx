@@ -1,3 +1,6 @@
+"use client";
+
+import useSWR from "swr";
 import { Plane, Clock, AlertTriangle, DollarSign } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { VulnerabilityBar } from "@/components/dashboard/vulnerability-bar";
@@ -13,15 +16,33 @@ import {
 } from "@/lib/queries";
 import { CHART_COLORS } from "@/lib/constants";
 
-export default async function OverviewPage() {
-  const [kpis, vulnerableAirports, economicAirports, trendData, globeAirports] =
-    await Promise.all([
-      getOverviewKPIs(),
-      getTopVulnerableAirports(12),
-      getTopEconomicImpactAirports(12),
-      getTrendData(),
-      getGlobeAirports(),
-    ]);
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <div className="h-7 w-64 animate-pulse rounded bg-muted" />
+        <div className="mt-2 h-4 w-96 animate-pulse rounded bg-muted" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-28 animate-pulse rounded-xl border border-border bg-card" />
+        ))}
+      </div>
+      <div className="h-[380px] animate-pulse rounded-2xl border border-border bg-muted/50" />
+    </div>
+  );
+}
+
+export default function OverviewPage() {
+  const { data: kpis } = useSWR("overview-kpis", getOverviewKPIs);
+  const { data: vulnerableAirports } = useSWR("vuln-airports", () => getTopVulnerableAirports(12));
+  const { data: economicAirports } = useSWR("econ-airports", () => getTopEconomicImpactAirports(12));
+  const { data: trendData } = useSWR("trend-data", getTrendData);
+  const { data: globeAirports } = useSWR("globe-airports", getGlobeAirports);
+
+  if (!kpis || !vulnerableAirports || !economicAirports || !trendData || !globeAirports) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <div className="space-y-6">

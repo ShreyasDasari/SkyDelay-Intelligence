@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import type {
   CascadeVulnerability,
   DelayEconomics,
@@ -11,7 +11,7 @@ import type {
 // ── Overview Page Queries ──────────────────────────────────
 
 export async function getOverviewKPIs(): Promise<OverviewKPIs> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase.rpc("get_overview_kpis");
 
   // Fallback: manual query if RPC doesn't exist
@@ -52,7 +52,7 @@ export async function getOverviewKPIs(): Promise<OverviewKPIs> {
 export async function getTopVulnerableAirports(
   limit = 12
 ): Promise<CascadeVulnerability[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("mart_cascade_vulnerability")
     .select("*")
@@ -66,7 +66,7 @@ export async function getTopVulnerableAirports(
 export async function getTopEconomicImpactAirports(
   limit = 12
 ): Promise<CascadeVulnerability[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("mart_cascade_vulnerability")
     .select("*")
@@ -80,7 +80,7 @@ export async function getTopEconomicImpactAirports(
 export async function getTrendData(
   airports: string[] = ["ORD", "ATL", "DFW", "JFK", "DEN"]
 ): Promise<DelayEconomics[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("mart_delay_economics")
     .select("flight_date, airport, rolling_7day_avg_delay")
@@ -94,7 +94,7 @@ export async function getTrendData(
 // ── Cascade Page Queries ───────────────────────────────────
 
 export async function getCascadeAirports(): Promise<CascadeVulnerability[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("mart_cascade_vulnerability")
     .select("*")
@@ -106,7 +106,7 @@ export async function getCascadeAirports(): Promise<CascadeVulnerability[]> {
 }
 
 export async function getAirportDates(airport: string): Promise<string[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("mart_delay_economics")
     .select("flight_date")
@@ -125,7 +125,7 @@ export async function getRouteEconomics(
   causes: string[] = ["Weather", "Carrier", "NAS/ATC", "Late Aircraft"],
   limit = 30
 ): Promise<RouteEconomics[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("mart_route_economics")
     .select("*")
@@ -141,7 +141,7 @@ export async function getRouteEconomics(
 // ── Delay Patterns Queries ─────────────────────────────────
 
 export async function getHeatmapData(): Promise<HeatmapCell[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("mart_delay_economics")
     .select("day_name, month, pct_delayed_15");
@@ -168,7 +168,7 @@ export async function getHeatmapData(): Promise<HeatmapCell[]> {
 }
 
 export async function getDelayCauseDistribution(): Promise<DelayCause[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("mart_delay_economics")
     .select(
@@ -199,7 +199,7 @@ export async function getDelayCauseDistribution(): Promise<DelayCause[]> {
 export async function getDailyImpact(
   airport: string
 ): Promise<Pick<DelayEconomics, "flight_date" | "est_total_economic_impact">[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("mart_delay_economics")
     .select("flight_date, est_total_economic_impact")
@@ -214,7 +214,7 @@ export async function getDailyImpact(
 }
 
 export async function getDateRange(): Promise<{ min: string; max: string }> {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const { data: minData } = await supabase
     .from("mart_delay_economics")
@@ -239,7 +239,7 @@ export async function getDateRange(): Promise<{ min: string; max: string }> {
 // ── Globe data (top 26 airports for map) ───────────────────
 
 export async function getGlobeAirports(): Promise<CascadeVulnerability[]> {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("mart_cascade_vulnerability")
     .select("*")
