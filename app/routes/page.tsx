@@ -4,19 +4,18 @@ import { useState } from "react";
 import useSWR from "swr";
 import { RouteScatter } from "@/components/dashboard/route-scatter";
 import { RouteTable } from "@/components/dashboard/route-table";
-import { getRouteEconomics } from "@/lib/queries";
 import { CHART_COLORS } from "@/lib/constants";
 
 const ALL_CAUSES = ["Weather", "Carrier", "NAS/ATC", "Late Aircraft"];
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function RoutesPage() {
   const [minFlights, setMinFlights] = useState(100);
   const [causes, setCauses] = useState<string[]>(ALL_CAUSES);
 
-  const { data: routes } = useSWR(
-    `routes-${minFlights}-${causes.join(",")}`,
-    () => getRouteEconomics(minFlights, causes)
-  );
+  const apiUrl = `/api/routes?minFlights=${minFlights}&causes=${causes.join(",")}`;
+  const { data } = useSWR(apiUrl, fetcher);
+  const routes = data?.routes;
 
   function toggleCause(cause: string) {
     setCauses((prev) =>
@@ -35,7 +34,6 @@ export default function RoutesPage() {
         </p>
       </div>
 
-      {/* Inline controls */}
       <div className="animate-fade-in-delay-1 flex flex-wrap items-end gap-6 rounded-xl border border-border bg-card p-4">
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">

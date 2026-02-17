@@ -4,11 +4,11 @@ import useSWR from "swr";
 import { Heatmap } from "@/components/dashboard/heatmap";
 import { DelayPie } from "@/components/dashboard/delay-pie";
 import { DailyImpactBar } from "@/components/dashboard/daily-impact-bar";
-import { getHeatmapData, getDelayCauseDistribution } from "@/lib/queries";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function PatternsPage() {
-  const { data: heatmapData } = useSWR("heatmap-data", getHeatmapData);
-  const { data: causeData } = useSWR("cause-data", getDelayCauseDistribution);
+  const { data } = useSWR("/api/patterns", fetcher);
 
   return (
     <div className="space-y-6">
@@ -21,13 +21,13 @@ export default function PatternsPage() {
         </p>
       </div>
 
-      {heatmapData && causeData ? (
+      {data && !data.error ? (
         <>
           <div className="animate-fade-in-delay-1">
-            <Heatmap data={heatmapData} />
+            <Heatmap data={data.heatmap} />
           </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 animate-fade-in-delay-2">
-            <DelayPie data={causeData} />
+            <DelayPie data={data.causes} />
             <DailyImpactBar />
           </div>
         </>

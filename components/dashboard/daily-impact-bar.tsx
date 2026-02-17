@@ -11,19 +11,20 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { getDailyImpact } from "@/lib/queries";
 import { CHART_COLORS } from "@/lib/constants";
 
 const AIRPORTS = ["ORD", "ATL", "DFW", "JFK", "DEN", "LAX", "EWR", "BOS"];
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function DailyImpactBar() {
   const [airport, setAirport] = useState("ORD");
 
-  const { data: rawData, isLoading } = useSWR(`daily-impact-${airport}`, () =>
-    getDailyImpact(airport)
+  const { data, isLoading } = useSWR(
+    `/api/daily-impact?airport=${airport}`,
+    fetcher
   );
 
-  const chartData = (rawData || []).map((r) => ({
+  const chartData = (data?.data || []).map((r: { flight_date: string; est_total_economic_impact: number }) => ({
     flight_date: r.flight_date?.slice(5) || "",
     cost: r.est_total_economic_impact || 0,
   }));

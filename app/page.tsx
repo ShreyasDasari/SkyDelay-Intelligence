@@ -7,14 +7,9 @@ import { VulnerabilityBar } from "@/components/dashboard/vulnerability-bar";
 import { EconomicBar } from "@/components/dashboard/economic-bar";
 import { TrendLine } from "@/components/dashboard/trend-line";
 import { GlobeWrapper } from "@/components/three/globe-wrapper";
-import {
-  getOverviewKPIs,
-  getTopVulnerableAirports,
-  getTopEconomicImpactAirports,
-  getTrendData,
-  getGlobeAirports,
-} from "@/lib/queries";
 import { CHART_COLORS } from "@/lib/constants";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 function LoadingSkeleton() {
   return (
@@ -34,25 +29,22 @@ function LoadingSkeleton() {
 }
 
 export default function OverviewPage() {
-  const { data: kpis, error: kpisErr } = useSWR("overview-kpis", getOverviewKPIs);
-  const { data: vulnerableAirports, error: vulnErr } = useSWR("vuln-airports", () => getTopVulnerableAirports(12));
-  const { data: economicAirports, error: econErr } = useSWR("econ-airports", () => getTopEconomicImpactAirports(12));
-  const { data: trendData, error: trendErr } = useSWR("trend-data", getTrendData);
-  const { data: globeAirports, error: globeErr } = useSWR("globe-airports", getGlobeAirports);
+  const { data, error } = useSWR("/api/overview", fetcher);
 
-  console.log("[v0] kpis:", kpis, "err:", kpisErr);
-  console.log("[v0] vuln:", vulnerableAirports?.length, "err:", vulnErr);
-  console.log("[v0] econ:", economicAirports?.length, "err:", econErr);
-  console.log("[v0] trend:", trendData?.length, "err:", trendErr);
-  console.log("[v0] globe:", globeAirports?.length, "err:", globeErr);
-
-  if (!kpis || !vulnerableAirports || !economicAirports || !trendData || !globeAirports) {
-    return <LoadingSkeleton />;
+  if (error) {
+    return (
+      <div className="flex h-64 items-center justify-center rounded-xl border border-destructive/20 bg-destructive/5">
+        <p className="text-sm text-destructive">Failed to load data. Check Supabase connection.</p>
+      </div>
+    );
   }
+
+  if (!data || data.error) return <LoadingSkeleton />;
+
+  const { kpis, vulnerable, economic, trend, globe } = data;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="animate-fade-in">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Flight Delay Economics
@@ -62,7 +54,6 @@ export default function OverviewPage() {
         </p>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in-delay-1">
         <KpiCard
           label="Flights Analyzed"
@@ -77,7 +68,7 @@ export default function OverviewPage() {
           accentColor={CHART_COLORS.secondary}
         />
         <KpiCard
-          label="Delayed >= 15 min"
+          label={"Delayed >= 15 min"}
           value={`${kpis.pct_delayed}%`}
           icon={<AlertTriangle className="h-4 w-4" />}
           accentColor={CHART_COLORS.accent}
@@ -90,20 +81,17 @@ export default function OverviewPage() {
         />
       </div>
 
-      {/* 3D Globe */}
       <div className="animate-fade-in-delay-2">
-        <GlobeWrapper airports={globeAirports} />
+        <GlobeWrapper airports={globe} />
       </div>
 
-      {/* Two-column charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 animate-fade-in-delay-3">
-        <VulnerabilityBar data={vulnerableAirports} />
-        <EconomicBar data={economicAirports} />
+        <VulnerabilityBar data={vulnerable} />
+        <EconomicBar data={economic} />
       </div>
 
-      {/* Trend line */}
       <div className="animate-fade-in-delay-3">
-        <TrendLine data={trendData} />
+        <TrendLine data={trend} />
       </div>
     </div>
   );

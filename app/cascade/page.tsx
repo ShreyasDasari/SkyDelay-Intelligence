@@ -2,15 +2,11 @@
 
 import useSWR from "swr";
 import { CascadeSimulator } from "@/components/dashboard/cascade-simulator";
-import { getCascadeAirports, getAirportDates } from "@/lib/queries";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function CascadePage() {
-  const { data: airports } = useSWR("cascade-airports", getCascadeAirports);
-  const firstAirport = airports?.[0]?.airport;
-  const { data: dates } = useSWR(
-    firstAirport ? `dates-${firstAirport}` : null,
-    () => (firstAirport ? getAirportDates(firstAirport) : Promise.resolve([]))
-  );
+  const { data, error } = useSWR("/api/cascade", fetcher);
 
   return (
     <div className="space-y-6">
@@ -23,15 +19,23 @@ export default function CascadePage() {
         </p>
       </div>
 
-      {airports && dates ? (
-        <CascadeSimulator airports={airports} dates={dates} />
-      ) : (
+      {error && (
+        <div className="flex h-64 items-center justify-center rounded-xl border border-destructive/20 bg-destructive/5">
+          <p className="text-sm text-destructive">Failed to load data.</p>
+        </div>
+      )}
+
+      {!data && !error && (
         <div className="flex h-64 items-center justify-center rounded-xl border border-border bg-card">
           <div className="flex flex-col items-center gap-2">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             <p className="text-xs text-muted-foreground">Loading airports...</p>
           </div>
         </div>
+      )}
+
+      {data && !data.error && (
+        <CascadeSimulator airports={data.airports} dates={data.dates} />
       )}
     </div>
   );
