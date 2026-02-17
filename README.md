@@ -4,7 +4,7 @@
 
 > A single 90-minute delay at Chicago O'Hare cascades to **1,565 downstream flights**, affecting **296,774 passengers** with a total economic impact of **$32.9 million**.
 
-**[Live Dashboard](https://skydelay.streamlit.app)** · **[MCP Server Docs](#mcp-server)** · **[Architecture](#architecture)**
+**[Live Dashboard](https://v0-sky-delay-intelligence.vercel.app/)** · **[MCP Server Docs](#mcp-server)** · **[Architecture](#architecture)**
 
 ---
 
