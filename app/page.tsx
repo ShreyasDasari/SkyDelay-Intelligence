@@ -34,11 +34,17 @@ function LoadingSkeleton() {
 }
 
 export default function OverviewPage() {
-  const { data: kpis } = useSWR("overview-kpis", getOverviewKPIs);
-  const { data: vulnerableAirports } = useSWR("vuln-airports", () => getTopVulnerableAirports(12));
-  const { data: economicAirports } = useSWR("econ-airports", () => getTopEconomicImpactAirports(12));
-  const { data: trendData } = useSWR("trend-data", getTrendData);
-  const { data: globeAirports } = useSWR("globe-airports", getGlobeAirports);
+  const { data: kpis, error: kpisErr } = useSWR("overview-kpis", getOverviewKPIs);
+  const { data: vulnerableAirports, error: vulnErr } = useSWR("vuln-airports", () => getTopVulnerableAirports(12));
+  const { data: economicAirports, error: econErr } = useSWR("econ-airports", () => getTopEconomicImpactAirports(12));
+  const { data: trendData, error: trendErr } = useSWR("trend-data", getTrendData);
+  const { data: globeAirports, error: globeErr } = useSWR("globe-airports", getGlobeAirports);
+
+  console.log("[v0] kpis:", kpis, "err:", kpisErr);
+  console.log("[v0] vuln:", vulnerableAirports?.length, "err:", vulnErr);
+  console.log("[v0] econ:", economicAirports?.length, "err:", econErr);
+  console.log("[v0] trend:", trendData?.length, "err:", trendErr);
+  console.log("[v0] globe:", globeAirports?.length, "err:", globeErr);
 
   if (!kpis || !vulnerableAirports || !economicAirports || !trendData || !globeAirports) {
     return <LoadingSkeleton />;
