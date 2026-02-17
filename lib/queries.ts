@@ -12,41 +12,45 @@ import type {
 
 export async function getOverviewKPIs(): Promise<OverviewKPIs> {
   const supabase = createClient();
-  const { data, error } = await supabase.rpc("get_overview_kpis");
 
-  // Fallback: manual query if RPC doesn't exist
-  if (error || !data) {
-    const { data: raw } = await supabase
-      .from("mart_delay_economics")
-      .select(
-        "total_departures, avg_dep_delay_min, pct_delayed_15, est_total_economic_impact"
-      );
+  const { data } = await supabase
+    .from("mart_delay_economics")
+    .select(
+      "total_departures, avg_dep_delay_min, pct_delayed_15, est_total_economic_impact"
+    )
+    .returns<
+      Pick<
+        DelayEconomics,
+        | "total_departures"
+        | "avg_dep_delay_min"
+        | "pct_delayed_15"
+        | "est_total_economic_impact"
+      >[]
+    >();
 
-    if (!raw || raw.length === 0)
-      return { total_flights: 0, avg_delay: 0, pct_delayed: 0, total_impact: 0 };
+  const raw = data ?? [];
+  if (raw.length === 0)
+    return { total_flights: 0, avg_delay: 0, pct_delayed: 0, total_impact: 0 };
 
-    const total_flights = raw.reduce(
-      (sum, r) => sum + (r.total_departures || 0),
-      0
-    );
-    const avg_delay =
-      raw.reduce((sum, r) => sum + (r.avg_dep_delay_min || 0), 0) / raw.length;
-    const pct_delayed =
-      raw.reduce((sum, r) => sum + (r.pct_delayed_15 || 0), 0) / raw.length;
-    const total_impact = raw.reduce(
-      (sum, r) => sum + (r.est_total_economic_impact || 0),
-      0
-    );
+  const total_flights = raw.reduce(
+    (sum, r) => sum + (r.total_departures || 0),
+    0
+  );
+  const avg_delay =
+    raw.reduce((sum, r) => sum + (r.avg_dep_delay_min || 0), 0) / raw.length;
+  const pct_delayed =
+    raw.reduce((sum, r) => sum + (r.pct_delayed_15 || 0), 0) / raw.length;
+  const total_impact = raw.reduce(
+    (sum, r) => sum + (r.est_total_economic_impact || 0),
+    0
+  );
 
-    return {
-      total_flights: Math.round(total_flights),
-      avg_delay: Math.round(avg_delay * 10) / 10,
-      pct_delayed: Math.round(pct_delayed * 10) / 10,
-      total_impact: Math.round(total_impact),
-    };
-  }
-
-  return data as OverviewKPIs;
+  return {
+    total_flights: Math.round(total_flights),
+    avg_delay: Math.round(avg_delay * 10) / 10,
+    pct_delayed: Math.round(pct_delayed * 10) / 10,
+    total_impact: Math.round(total_impact),
+  };
 }
 
 export async function getTopVulnerableAirports(
@@ -57,10 +61,11 @@ export async function getTopVulnerableAirports(
     .from("mart_cascade_vulnerability")
     .select("*")
     .order("vulnerability_rank", { ascending: true })
-    .limit(limit);
+    .limit(limit)
+    .returns<CascadeVulnerability[]>();
 
   if (error) throw error;
-  return (data || []) as CascadeVulnerability[];
+  return data ?? [];
 }
 
 export async function getTopEconomicImpactAirports(
@@ -71,10 +76,11 @@ export async function getTopEconomicImpactAirports(
     .from("mart_cascade_vulnerability")
     .select("*")
     .order("total_economic_impact", { ascending: false })
-    .limit(limit);
+    .limit(limit)
+    .returns<CascadeVulnerability[]>();
 
   if (error) throw error;
-  return (data || []) as CascadeVulnerability[];
+  return data ?? [];
 }
 
 export async function getTrendData(
@@ -85,10 +91,11 @@ export async function getTrendData(
     .from("mart_delay_economics")
     .select("flight_date, airport, rolling_7day_avg_delay")
     .in("airport", airports)
-    .order("flight_date", { ascending: true });
+    .order("flight_date", { ascending: true })
+    .returns<DelayEconomics[]>();
 
   if (error) throw error;
-  return (data || []) as DelayEconomics[];
+  return data ?? [];
 }
 
 // ── Cascade Page Queries ───────────────────────────────────
@@ -99,10 +106,11 @@ export async function getCascadeAirports(): Promise<CascadeVulnerability[]> {
     .from("mart_cascade_vulnerability")
     .select("*")
     .order("vulnerability_rank", { ascending: true })
-    .limit(30);
+    .limit(30)
+    .returns<CascadeVulnerability[]>();
 
   if (error) throw error;
-  return (data || []) as CascadeVulnerability[];
+  return data ?? [];
 }
 
 export async function getAirportDates(airport: string): Promise<string[]> {
@@ -112,10 +120,11 @@ export async function getAirportDates(airport: string): Promise<string[]> {
     .select("flight_date")
     .eq("airport", airport)
     .order("flight_date", { ascending: false })
-    .limit(30);
+    .limit(30)
+    .returns<Pick<DelayEconomics, "flight_date">[]>();
 
   if (error) throw error;
-  return (data || []).map((d) => d.flight_date);
+  return (data ?? []).map((d) => d.flight_date);
 }
 
 // ── Route Economics Queries ────────────────────────────────
@@ -132,10 +141,11 @@ export async function getRouteEconomics(
     .gte("total_flights", minFlights)
     .in("dominant_delay_cause", causes)
     .order("est_total_economic_impact", { ascending: false })
-    .limit(limit);
+    .limit(limit)
+    .returns<RouteEconomics[]>();
 
   if (error) throw error;
-  return (data || []) as RouteEconomics[];
+  return data ?? [];
 }
 
 // ── Delay Patterns Queries ─────────────────────────────────
@@ -144,13 +154,14 @@ export async function getHeatmapData(): Promise<HeatmapCell[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("mart_delay_economics")
-    .select("day_name, month, pct_delayed_15");
+    .select("day_name, month, pct_delayed_15")
+    .returns<Pick<DelayEconomics, "day_name" | "month" | "pct_delayed_15">[]>();
 
   if (error) throw error;
 
-  // Group by day_name + month and average the pct_delayed_15
+  const rows = data ?? [];
   const grouped: Record<string, { sum: number; count: number }> = {};
-  (data || []).forEach((row) => {
+  rows.forEach((row) => {
     const key = `${row.day_name}|${row.month}`;
     if (!grouped[key]) grouped[key] = { sum: 0, count: 0 };
     grouped[key].sum += row.pct_delayed_15 || 0;
@@ -173,7 +184,16 @@ export async function getDelayCauseDistribution(): Promise<DelayCause[]> {
     .from("mart_delay_economics")
     .select(
       "weather_delays, carrier_delays, nas_delays, late_aircraft_delays"
-    );
+    )
+    .returns<
+      Pick<
+        DelayEconomics,
+        | "weather_delays"
+        | "carrier_delays"
+        | "nas_delays"
+        | "late_aircraft_delays"
+      >[]
+    >();
 
   if (error) throw error;
 
@@ -181,7 +201,7 @@ export async function getDelayCauseDistribution(): Promise<DelayCause[]> {
     carrier = 0,
     nas = 0,
     lateAircraft = 0;
-  (data || []).forEach((row) => {
+  (data ?? []).forEach((row) => {
     weather += row.weather_delays || 0;
     carrier += row.carrier_delays || 0;
     nas += row.nas_delays || 0;
@@ -204,13 +224,13 @@ export async function getDailyImpact(
     .from("mart_delay_economics")
     .select("flight_date, est_total_economic_impact")
     .eq("airport", airport)
-    .order("flight_date", { ascending: true });
+    .order("flight_date", { ascending: true })
+    .returns<
+      Pick<DelayEconomics, "flight_date" | "est_total_economic_impact">[]
+    >();
 
   if (error) throw error;
-  return (data || []) as Pick<
-    DelayEconomics,
-    "flight_date" | "est_total_economic_impact"
-  >[];
+  return data ?? [];
 }
 
 export async function getDateRange(): Promise<{ min: string; max: string }> {
@@ -231,8 +251,8 @@ export async function getDateRange(): Promise<{ min: string; max: string }> {
     .single();
 
   return {
-    min: minData?.flight_date || "",
-    max: maxData?.flight_date || "",
+    min: (minData as { flight_date: string } | null)?.flight_date || "",
+    max: (maxData as { flight_date: string } | null)?.flight_date || "",
   };
 }
 
@@ -244,8 +264,9 @@ export async function getGlobeAirports(): Promise<CascadeVulnerability[]> {
     .from("mart_cascade_vulnerability")
     .select("*")
     .order("vulnerability_rank", { ascending: true })
-    .limit(26);
+    .limit(26)
+    .returns<CascadeVulnerability[]>();
 
   if (error) throw error;
-  return (data || []) as CascadeVulnerability[];
+  return data ?? [];
 }
